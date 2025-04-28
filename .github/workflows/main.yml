@@ -32,7 +32,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT }}
           source: "build/*"
-          target: "/home/ubuntu/build-temp"
+          target: "/home/ubuntu/build-temp1"
 
       - name: SSH into EC2 and move build to web directory
         uses: appleboy/ssh-action@v1.0.3
@@ -44,7 +44,7 @@ jobs:
           script: |
             echo "Connected to EC2!"
             sudo rm -rf /var/www/html/frontend/*
-            sudo mv /home/ubuntu/build-temp/* /var/www/html/frontend/
+            sudo mv /home/ubuntu/build-temp1/* /var/www/html/frontend/
             sudo nginx -t
             sudo systemctl reload nginx
             echo "Deployment complete."
