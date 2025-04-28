@@ -43,8 +43,32 @@ jobs:
           port: ${{ secrets.EC2_PORT }}
           script: |
             echo "Connected to EC2!"
+            echo "Updating EC2 server"
+            sudo apt update -y
+            echo "stopping ngins"
+            sudo systemctl stop nginx
+            echo "starting nginx"
+            sudo systemctl start nginx
             sudo rm -rf /var/www/html/frontend/*
             sudo mv /home/ubuntu/build-temp/* /var/www/html/frontend/
-            sudo nginx -t  # Test Nginx configuration
-            sudo systemctl reload nginx  # Reload Nginx to apply changes
-            echo "Deployment complete."
+            echo "Removing backend folder if it exist earlier"
+            sudo rm -rf backend
+            echo "Cloning to GITHUB"
+            git clone https://github.com/muhammadwamiq/backend.git
+            echo "listing files of current directiory"
+            ls
+            echo "Moved inside project folder"
+            cd backend
+            echo "installing dependencies" 
+            sudo npm install
+            echo "installing pm2"
+            sudo npm install -g pm2
+            echo "starting node app in background"
+            pm2 start app.js -f --name "backend"
+            echo "saving pm2"
+            pm2 save
+            echo "testing nginx"
+            sudo nginx -t 
+            echo "nginx reloadeding"
+            sudo systemctl reload nginx
+            
