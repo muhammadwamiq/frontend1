@@ -1,60 +1,3 @@
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
-#     branches:
-#       - main
-# jobs:
-#   deploy:
-#     runs-on: self-hosted
-
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-
-#       - name: Install Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '18'  # or your preferred version
-
-#       - name: Install dependencies and build
-#         run: |
-#           npm install
-#           npm run build
-
-#       - name: Copy build folder to EC2 via SCP
-#         uses: appleboy/scp-action@v0.1.7
-#         with:
-#           host: ${{ secrets.EC2_HOST }}
-#           username: ${{ secrets.EC2_USER }}
-#           key: ${{ secrets.EC2_SSH_KEY }}
-#           port: ${{ secrets.EC2_PORT }}
-#           source: "build/*"
-#           target: "/home/ubuntu/build-temp"
-
-#       - name: SSH into EC2 and move build to web directory
-#         uses: appleboy/ssh-action@v1.0.3
-#         with:
-#           host: ${{ secrets.EC2_HOST }}
-#           username: ${{ secrets.EC2_USER }}
-#           key: ${{ secrets.EC2_SSH_KEY }}
-#           port: ${{ secrets.EC2_PORT }}
-#           script: |
-#             echo "Connected to EC2!"
-#             echo "Updating EC2 server"
-#             sudo apt update -y
-#             echo "stopping ngins"
-#             sudo systemctl stop nginx
-#             echo "starting nginx"
-#             sudo systemctl start nginx
-#             sudo rm -rf /var/www/html/frontend/*
-#             sudo mv /home/ubuntu/build-temp/* /var/www/html/frontend/
-#             echo "testing nginx"
-#             sudo nginx -t 
-#             echo "nginx reloadeding"
-#             sudo systemctl reload nginx
-
 on:
   push:
     branches:
@@ -62,10 +5,9 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -81,26 +23,37 @@ jobs:
           npm install
           npm run build
 
-      - name: Deploy to Nginx
-        run: |
-          echo "Updating server"
-          sudo apt update -y
+      - name: Copy build folder to EC2 via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          source: "build/*"
+          target: "/home/ubuntu/build-temp"
 
-          echo "Stopping Nginx"
-          sudo systemctl stop nginx
+      - name: SSH into EC2 and move build to web directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          script: |
+            echo "Connected to EC2!"
+            echo "Updating EC2 server"
+            sudo apt update -y
+            echo "stopping ngins"
+            sudo systemctl stop nginx
+            echo "starting nginx"
+            sudo systemctl start nginx
+            sudo rm -rf /var/www/html/frontend/*
+            sudo mv /home/ubuntu/build-temp/* /var/www/html/frontend/
+            echo "testing nginx"
+            sudo nginx -t 
+            echo "nginx reloadeding"
+            sudo systemctl reload nginx
 
-          echo "Clearing old frontend"
-          sudo rm -rf /var/www/html/frontend/*
 
-          echo "Copying new build"
-          sudo cp -r build/* /var/www/html/frontend/
-
-          echo "Testing Nginx config"
-          sudo nginx -t
-
-          echo "Starting Nginx"
-          sudo systemctl start nginx
-
-          echo "Reloading Nginx"
-          sudo systemctl reload nginx
 
